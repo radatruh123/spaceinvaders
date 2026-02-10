@@ -1,74 +1,80 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="cs">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Space Invaders - High Score</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    
+    <title>Space Invaders - Highscores</title>
     <style>
-        :root {
-            --primary-color: #33ff00; /* Neonová zelená */
-            --secondary-color: #ff0055; /* Červená pro nepřátele */
-            --text-color: #fff;
-            --bg-color: #111;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--primary-color);
-            font-family: 'Press Start 2P', cursive;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #00ff00;
             min-height: 100vh;
-            /* Efekt staré obrazovky */
-            background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            background-size: 100% 2px, 3px 100%;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
         }
 
         h1 {
-            text-transform: uppercase;
-            text-shadow: 3px 3px 0px #fff; /* Větší stín pro retro efekt */
-            margin-bottom: 20px;
             text-align: center;
-            font-size: 2.5rem;
-            letter-spacing: 2px;
+            font-size: 3rem;
+            margin: 30px 0;
+            text-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00;
+            animation: glow 2s ease-in-out infinite alternate;
         }
 
-        /* Styl pro český popis hry */
-        .game-description {
-            max-width: 800px;
-            text-align: center;
-            color: #ddd;
-            font-size: 0.8rem;
-            line-height: 1.8;
-            margin-bottom: 40px;
-            padding: 20px;
-            border-top: 2px dashed #333;
-            border-bottom: 2px dashed #333;
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00;
+            }
+            to {
+                text-shadow: 0 0 30px #00ff00, 0 0 60px #00ff00, 0 0 80px #00ff00;
+            }
         }
 
-        /* Styl tabulky */
-        .score-board {
-            width: 100%;
-            max-width: 700px;
-            border: 4px solid #fff; /* Tlustší rámeček */
-            padding: 30px;
-            background-color: #000;
-            box-shadow: 10px 10px 0px rgba(51, 255, 0, 0.3);
-        }
-
-        .score-board h2 {
+        .info {
             text-align: center;
-            color: var(--secondary-color);
-            margin-top: 0;
             margin-bottom: 30px;
-            font-size: 1.5rem;
-            text-decoration: underline;
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .refresh-btn {
+            display: block;
+            margin: 0 auto 20px;
+            padding: 12px 30px;
+            background: #00ff00;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .refresh-btn:hover {
+            background: #00cc00;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px #00ff00;
+        }
+
+        .table-container {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.3);
         }
 
         table {
@@ -76,116 +82,187 @@
             border-collapse: collapse;
         }
 
-        th, td {
-            text-align: left;
-            padding: 15px 10px;
-            font-size: 0.9rem;
+        thead {
+            background: rgba(0, 255, 0, 0.2);
         }
 
         th {
-            color: var(--secondary-color);
-            border-bottom: 4px solid var(--primary-color);
+            padding: 15px;
+            text-align: left;
+            font-size: 1.2rem;
+            border-bottom: 2px solid #00ff00;
             text-transform: uppercase;
         }
 
+        th:first-child {
+            width: 80px;
+            text-align: center;
+        }
+
         td {
-            border-bottom: 1px dotted #333;
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.2);
         }
 
-        /* Zarovnání skóre doprava */
-        .score-val {
-            text-align: right;
-            color: #fff;
+        td:first-child {
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1rem;
         }
 
-        /* Responzivita */
-        @media (max-width: 600px) {
-            h1 { font-size: 1.8rem; }
-            .game-description { font-size: 0.6rem; }
-            th, td { font-size: 0.7rem; padding: 10px 5px; }
+        tr:hover {
+            background: rgba(0, 255, 0, 0.1);
+        }
+
+        .rank-1 td:first-child {
+            color: #ffd700;
+            text-shadow: 0 0 10px #ffd700;
+        }
+
+        .rank-2 td:first-child {
+            color: #c0c0c0;
+            text-shadow: 0 0 10px #c0c0c0;
+        }
+
+        .rank-3 td:first-child {
+            color: #cd7f32;
+            text-shadow: 0 0 10px #cd7f32;
+        }
+
+        .score {
+            color: #ffff00;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .time {
+            color: #00ccff;
+        }
+
+        .date {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+            font-size: 1.2rem;
+        }
+
+        .trophy {
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            th, td {
+                padding: 8px;
+                font-size: 0.9rem;
+            }
+
+            .date {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="container">
+        <h1>🚀 SPACE INVADERS 🚀</h1>
+        <h2 style="text-align: center; color: #00ff00; margin-bottom: 20px;">HIGHSCORES</h2>
+        
+        <div class="info">
+            Poslední aktualizace: <span id="lastUpdate">-</span>
+        </div>
 
-    <h1>SPACE INVADERS</h1>
+        <button class="refresh-btn" onclick="loadHighscores()">🔄 Obnovit</button>
 
-    <div class="score-board">
-        <h2>TOP 10 PLAYERS</h2>
-        <table id="scoreTable">
-            <thead>
-                <tr>
-                    <th>RANK</th>
-                    <th>NAME</th>
-                    <th class="score-val">SCORE</th>
-                </tr>
-            </thead>
-            <tbody>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Jméno</th>
+                        <th>Score</th>
+                        <th>Čas</th>
+                        <th class="date-col">Datum</th>
+                    </tr>
+                </thead>
+                <tbody id="highscoresTable">
+                    <tr>
+                        <td colspan="5" class="no-data">Načítání dat...</td>
+                    </tr>
                 </tbody>
-        </table>
+            </table>
+        </div>
     </div>
 
     <script>
-        // Funkce pro generování náhodného čísla
-        function getRandomInt(min, max) {
-            return Math.floor(Math.random() * (max - min + 1)) + min;
+        function loadHighscores() {
+            fetch('highscores.json')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Soubor nenalezen');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const tbody = document.getElementById('highscoresTable');
+                    tbody.innerHTML = '';
+
+                    if (!data.highscores || data.highscores.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" class="no-data">Zatím žádná skóre! 🎮</td></tr>';
+                        return;
+                    }
+
+                    data.highscores.forEach((entry, index) => {
+                        const row = document.createElement('tr');
+                        row.className = `rank-${index + 1}`;
+
+                        let trophy = '';
+                        if (index === 0) trophy = '🥇';
+                        else if (index === 1) trophy = '🥈';
+                        else if (index === 2) trophy = '🥉';
+
+                        row.innerHTML = `
+                            <td><span class="trophy">${trophy}</span>${index + 1}</td>
+                            <td>${escapeHtml(entry.name)}</td>
+                            <td class="score">${entry.score}</td>
+                            <td class="time">${entry.time}s</td>
+                            <td class="date date-col">${entry.date}</td>
+                        `;
+
+                        tbody.appendChild(row);
+                    });
+
+                    // Aktualizace času
+                    document.getElementById('lastUpdate').textContent = 
+                        new Date().toLocaleTimeString('cs-CZ');
+                })
+                .catch(error => {
+                    console.error('Chyba při načítání:', error);
+                    const tbody = document.getElementById('highscoresTable');
+                    tbody.innerHTML = '<tr><td colspan="5" class="no-data">Chyba při načítání dat! Zkuste obnovit stránku.</td></tr>';
+                });
         }
 
-        // Seznam jmen
-        const playerNames = [
-            "SkyWalker", "AlienHunter", "Neo", "Ripley", "StarLord", 
-            "HanSolo", "Vader", "Spock", "Kirk", "Yoda", "Matrix", "Tron",
-            "PlayerOne", "RetroKing", "LaserBoy"
-        ];
-
-        // 1. Vygenerujeme data
-        let highScores = [];
-        
-        for (let i = 0; i < 10; i++) {
-            const randomName = playerNames[Math.floor(Math.random() * playerNames.length)];
-            const randomScore = getRandomInt(55, 550); // Vyšší skóre vypadají lépe
-            
-            highScores.push({ name: randomName, score: randomScore });
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
-        // 2. Seřadíme pole (nejvyšší nahoře)
-        highScores.sort((a, b) => b.score - a.score);
+        // Načtení dat při načtení stránky
+        loadHighscores();
 
-        // 3. Vložíme do HTML
-        const tableBody = document.querySelector("#scoreTable tbody");
-
-        highScores.forEach((player, index) => {
-            const row = document.createElement("tr");
-
-            // Rank
-            const rankCell = document.createElement("td");
-            rankCell.innerText = (index + 1) + "ST"; // Zjednodušené řadové číslovky
-            if (index === 0) {
-                rankCell.style.color = "yellow"; 
-                rankCell.innerText = "1ST 👑"; // Korunka pro prvního
-            }
-            if (index === 1) rankCell.innerText = "2ND";
-            if (index === 2) rankCell.innerText = "3RD";
-            if (index > 2) rankCell.innerText = (index + 1) + "TH";
-
-            // Name
-            const nameCell = document.createElement("td");
-            nameCell.innerText = player.name;
-            if (index === 0) nameCell.style.color = "yellow";
-
-            // Score
-            const scoreCell = document.createElement("td");
-            scoreCell.innerText = player.score.toLocaleString();
-            scoreCell.classList.add("score-val");
-            if (index === 0) scoreCell.style.color = "yellow";
-
-            row.appendChild(rankCell);
-            row.appendChild(nameCell);
-            row.appendChild(scoreCell);
-
-            tableBody.appendChild(row);
-        });
+        // Automatická aktualizace každých 5 sekund
+        setInterval(loadHighscores, 5000);
     </script>
-
 </body>
 </html>

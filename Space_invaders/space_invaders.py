@@ -3,6 +3,8 @@ import sys
 import random
 import time
 import math
+import json
+import os
 
 pygame.init()
 WIDTH, HEIGHT = 800, 600
@@ -21,12 +23,14 @@ GREEN = (0, 255, 0)
 # ===== FONTY =====
 font = pygame.font.Font(None, 32)
 big_font = pygame.font.Font(None, 72)
+small_font = pygame.font.Font(None, 24)
 
 # ===== STAVY =====
 MENU = "menu"
 SETTINGS = "settings"
 GAME = "game"
 PAUSE = "pause"
+GAME_OVER = "game_over"
 state = MENU
 
 # ===== OBRÁZKY =====
@@ -58,6 +62,12 @@ base_hp = 5
 # ===== SCORE & TIME =====
 score = 0
 start_time = 0
+final_score = 0
+final_time = 0
+
+# ===== GAME OVER =====
+player_name = ""
+name_submitted = False
 
 # ===== PAUSE =====
 pause_button = pygame.Rect(10, 10, 100, 40)
@@ -119,15 +129,51 @@ def draw_hearts():
         pygame.draw.circle(screen, RED, (30 + i * 30, HEIGHT - 30), 10)
 
 def reset_game():
-    global lives, score, start_time, base_hp
+    global lives, score, start_time, base_hp, player_name, name_submitted, final_score, final_time
     lives = 3
     base_hp = 5
     score = 0
     start_time = time.time()
+    player_name = ""
+    name_submitted = False
+    final_score = 0
+    final_time = 0
     enemies.clear()
     meteors.clear()
     player_bullets.clear()
     enemy_bullets.clear()
+    player.x = WIDTH // 2 - 25
+    player.y = HEIGHT - 120
+
+def save_highscore(name, score, game_time):
+    """Uloží skóre do JSON souboru"""
+    try:
+        # Načtení existujících dat
+        if os.path.exists("highscores.json"):
+            with open("highscores.json", "r", encoding="utf-8") as f:
+                data = json.load(f)
+        else:
+            data = {"highscores": []}
+        
+        # Přidání nového skóre
+        data["highscores"].append({
+            "name": name,
+            "score": score,
+            "time": game_time,
+            "date": time.strftime("%d.%m.%Y %H:%M")
+        })
+        
+        # Seřazení podle skóre (nejvyšší první)
+        data["highscores"].sort(key=lambda x: x["score"], reverse=True)
+        
+        # Uložení zpět do souboru
+        with open("highscores.json", "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        
+        return True
+    except Exception as e:
+        print(f"Chyba při ukládání: {e}")
+        return False
 
 # ===== HLAVNÍ SMYČKA =====
 enemy_timer = 0
@@ -162,6 +208,22 @@ while running:
                 if event.key == pygame.K_m:
                     state = MENU
 
+        elif state == GAME_OVER:
+            if not name_submitted:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN and len(player_name) > 0:
+                        # Uložit skóre
+                        save_highscore(player_name, final_score, final_time)
+                        name_submitted = True
+                    elif event.key == pygame.K_BACKSPACE:
+                        player_name = player_name[:-1]
+                    elif event.unicode.isprintable() and len(player_name) < 15:
+                        player_name += event.unicode
+            else:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+                        state = MENU
+
     # ===== MENU =====
     if state == MENU:
         title = big_font.render("SPACE INVADERS", True, GREEN)
@@ -175,6 +237,7 @@ while running:
             menu_rects.append((item, rect))
 
         if pygame.mouse.get_pressed()[0]:
+            time.sleep(0.2)  # Prevence vícenásobného kliknutí
             for item, rect in menu_rects:
                 if rect.collidepoint(pygame.mouse.get_pos()):
                     if item == "Start":
@@ -287,8 +350,11 @@ while running:
 
         draw_hearts()
 
+        # Kontrola konce hry
         if lives <= 0 or base_hp <= 0:
-            state = MENU
+            final_score = score
+            final_time = int(time.time() - start_time)
+            state = GAME_OVER
 
     # ===== PAUSE =====
     elif state == PAUSE:
@@ -307,6 +373,45 @@ while running:
             else:
                 screen.blit(big_font.render(str(remaining), True, RED),
                             (WIDTH//2 - 20, 380))
+
+    # ===== GAME OVER =====
+    elif state == GAME_OVER:
+        screen.blit(big_font.render("GAME OVER", True, RED),
+                    (WIDTH//2 - 180, 100))
+        
+        screen.blit(font.render(f"Final Score: {final_score}", True, WHITE),
+                    (WIDTH//2 - 100, 200))
+        screen.blit(font.render(f"Time: {final_time}s", True, WHITE),
+                    (WIDTH//2 - 60, 240))
+        
+        if not name_submitted:
+            # Zobrazení pole pro jméno
+            screen.blit(font.render("Enter your name:", True, WHITE),
+                        (WIDTH//2 - 100, 300))
+            
+            # Textové pole
+            input_rect = pygame.Rect(WIDTH//2 - 150, 340, 300, 40)
+            pygame.draw.rect(screen, WHITE, input_rect, 2)
+            
+            # Zobrazení zadaného jména
+            name_surface = font.render(player_name, True, WHITE)
+            screen.blit(name_surface, (input_rect.x + 10, input_rect.y + 5))
+            
+            # Blikající kurzor
+            if int(time.time() * 2) % 2 == 0:
+                cursor_x = input_rect.x + 10 + name_surface.get_width()
+                pygame.draw.line(screen, WHITE, 
+                               (cursor_x, input_rect.y + 5),
+                               (cursor_x, input_rect.y + 35), 2)
+            
+            screen.blit(small_font.render("Press ENTER to submit", True, GRAY),
+                        (WIDTH//2 - 95, 400))
+        else:
+            # Potvrzení uložení
+            screen.blit(font.render("Score saved!", True, GREEN),
+                        (WIDTH//2 - 80, 320))
+            screen.blit(small_font.render("Press ENTER to continue", True, GRAY),
+                        (WIDTH//2 - 105, 370))
 
     pygame.display.flip()
 
